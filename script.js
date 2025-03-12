@@ -72,22 +72,22 @@ function updateLetter() {
 
 // 播放字母的發音
 function playLetterSound(letter) {
-    const utterance = new SpeechSynthesisUtterance(letter);  // 創建語音合成的對象
+    const lowercaseLetter = letter.toLowerCase();  // 將字母轉換為小寫
+    const utterance = new SpeechSynthesisUtterance(lowercaseLetter);  // 創建語音合成的對象
     utterance.lang = 'en-US';  // 設定語言為美式英語
 
     // 確保語音列表已經載入並選擇適當的語音
     if (voices.length === 0) {
         speechSynthesis.onvoiceschanged = function() {
             voices = speechSynthesis.getVoices();
-            // 選擇語音
-            const voice = voices.find(v => v.lang === 'en-US' && v.name.includes("Google"));
+            const voice = voices.find(v => v.lang === 'en-US');
             if (voice) {
                 utterance.voice = voice;
             }
             speechSynthesis.speak(utterance); // 播放語音
         };
     } else {
-        const voice = voices.find(v => v.lang === 'en-US' && v.name.includes("Google"));
+        const voice = voices.find(v => v.lang === 'en-US');
         if (voice) {
             utterance.voice = voice;
         }
@@ -108,6 +108,7 @@ letterDisplay.addEventListener("click", () => {
         isFirstClick = true;  // 重置為第一次點擊
     }
 });
+
 
 // 上一個字母
 prevButton.addEventListener("click", () => {
