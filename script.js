@@ -118,6 +118,7 @@ prevButton.addEventListener("click", () => {
         currentLetterIndex = shuffledAlphabet.length - 1;
     }
     updateLetter();
+    isFirstClick = true;  // 重置為第一次點擊
 });
 
 // 下一個字母
@@ -129,6 +130,7 @@ nextButton.addEventListener("click", () => {
         currentLetterIndex = 0;
     }
     updateLetter();
+    isFirstClick = true;  // 重置為第一次點擊
 });
 
 // 初始化遊戲
