@@ -71,29 +71,17 @@ function updateLetter() {
 }
 
 // 播放字母的發音
+// 播放字母的音效
 function playLetterSound(letter) {
-    const lowercaseLetter = letter.toLowerCase();  // 將字母轉換為小寫
-    const utterance = new SpeechSynthesisUtterance(lowercaseLetter);  // 創建語音合成的對象
-    utterance.lang = 'en-US';  // 設定語言為美式英語
-
-    // 確保語音列表已經載入並選擇適當的語音
-    if (voices.length === 0) {
-        speechSynthesis.onvoiceschanged = function() {
-            voices = speechSynthesis.getVoices();
-            const voice = voices.find(v => v.lang === 'en-US');
-            if (voice) {
-                utterance.voice = voice;
-            }
-            speechSynthesis.speak(utterance); // 播放語音
-        };
-    } else {
-        const voice = voices.find(v => v.lang === 'en-US');
-        if (voice) {
-            utterance.voice = voice;
-        }
-        speechSynthesis.speak(utterance); // 播放語音
-    }
+    const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`); // 使用小寫字母對應音效
+    audio.play();  // 播放音效
 }
+
+// 點擊測試按鈕的事件
+document.getElementById("test-button").addEventListener("click", function() {
+    playLetterSound('a');  // 播放 a.mp3
+});
+
 
 // 點擊字母區塊的事件
 letterDisplay.addEventListener("click", () => {
