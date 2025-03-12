@@ -28,7 +28,7 @@ body, html {
 }
 
 .letter-display {
-    font-size: 20vw; /* 使用視口單位使字母能根據螢幕大小調整 */
+    font-size: 70vw; /* 使字體大小為螢幕寬度的 70% */
     font-weight: bold;
     padding: 20px;
     border-radius: 10px;
