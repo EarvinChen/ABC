@@ -70,18 +70,11 @@ function updateLetter() {
     letterDisplay.style.color = textColor;
 }
 
-// 播放字母的發音
-// 播放字母的音效
+/// 播放字母的音效
 function playLetterSound(letter) {
     const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`); // 使用小寫字母對應音效
     audio.play();  // 播放音效
 }
-
-// 點擊測試按鈕的事件
-document.getElementById("test-button").addEventListener("click", function() {
-    playLetterSound('a');  // 播放 a.mp3
-});
-
 
 // 點擊字母區塊的事件
 letterDisplay.addEventListener("click", () => {
@@ -96,7 +89,6 @@ letterDisplay.addEventListener("click", () => {
         isFirstClick = true;  // 重置為第一次點擊
     }
 });
-
 
 // 上一個字母
 prevButton.addEventListener("click", () => {
