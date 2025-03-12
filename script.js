@@ -7,13 +7,6 @@ const letterDisplay = document.getElementById("letter-display");
 const prevButton = document.getElementById("prev-button");
 const nextButton = document.getElementById("next-button");
 
-let voices = []; // 用來儲存可用的語音列表
-
-// 等待語音列表加載完畢
-speechSynthesis.onvoiceschanged = function() {
-    voices = speechSynthesis.getVoices();
-}
-
 // 隨機打亂陣列的函數
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -70,7 +63,7 @@ function updateLetter() {
     letterDisplay.style.color = textColor;
 }
 
-/// 播放字母的音效
+// 播放字母的音效
 function playLetterSound(letter) {
     const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`); // 使用小寫字母對應音效
     audio.play();  // 播放音效
