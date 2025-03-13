@@ -98,6 +98,11 @@ function updateLetter() {
     countdownLine.style.width = "0%";
     // 設定倒數底線顏色與字母顏色一致
     countdownLine.style.backgroundColor = textColor;
+    
+    // 如果倒數開關開啟，則開始倒數計時
+    if (countdownToggle.checked) {
+        startCountdown();
+    }
 }
 
 // 播放字母音效（使用 Audio API 播放預先準備的 MP3 檔案）
@@ -204,21 +209,21 @@ function goToPrevLetter() {
     isFirstClick = true;  // 重置點擊狀態
 }
 
-// 點擊字母區塊事件處理
+// 點擊字母區塊的事件處理
 letterDisplay.addEventListener("click", (e) => {
-    // 若為滑動事件後觸發的點擊，則不處理
+    // 如果是滑動事件結束後的點擊事件，就不處理
     if (isSwiping) {
         isSwiping = false;
         return;
     }
     
-    // 若倒數開關開啟，則讓倒數計時控制發音（不直接處理點擊）
+    // 如果倒數開關開啟，則由倒數計時控制發音，不直接處理點擊
     if (countdownToggle.checked) {
         return;
     }
     
     if (isFirstClick) {
-        // 第一次點擊時，播放當前字母的音效
+        // 第一次點擊時，播放當前字母音效
         playLetterSound(shuffledAlphabet[currentLetterIndex]);
         isFirstClick = false;
     } else {
@@ -238,28 +243,28 @@ letterDisplay.addEventListener('touchstart', (e) => {
 letterDisplay.addEventListener('touchend', (e) => {
     touchEndX = e.changedTouches[0].screenX;
     touchEndY = e.changedTouches[0].screenY;
-    handleSwipe();
+    handleSwipe(e);
 });
 
 // 處理滑動手勢
-function handleSwipe() {
+function handleSwipe(e) {
     const swipeThreshold = 50;  // 滑動閾值，需大於此值才觸發
     const swipeDistance = touchEndX - touchStartX;
     const verticalDistance = Math.abs(touchEndY - touchStartY);
     
     // 確保是水平滑動（水平移動距離大於垂直移動距離）
-    if (Math.abs(swipeDistance) > verticalDistance) {
-        if (Math.abs(swipeDistance) > swipeThreshold) {
-            isSwiping = true;  // 標記為滑動事件
-            
-            if (swipeDistance > 0) {
-                // 右滑 - 切換到上一個字母
-                goToPrevLetter();
-            } else {
-                // 左滑 - 切換到下一個字母
-                goToNextLetter();
-            }
+    if (Math.abs(swipeDistance) > verticalDistance && Math.abs(swipeDistance) > swipeThreshold) {
+        isSwiping = true;  // 標記為滑動事件
+        
+        if (swipeDistance > 0) {
+            // 右滑 - 切換到上一個字母
+            goToPrevLetter();
+        } else {
+            // 左滑 - 切換到下一個字母
+            goToNextLetter();
         }
+        // 防止隨後的點擊事件影響倒數計時 (僅適用於 iOS)
+        e.preventDefault();
     }
 }
 
