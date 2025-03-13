@@ -92,3 +92,254 @@ function updateLetter() {
     let textColor = getRandomColor();
     
     // 確保字母顏色與背景顏色對比足夠
+    while (!isHighContrast(textColor, backgroundColor)) {
+        textColor = getRandomColor();
+    }
+    
+    // 更新字母與背景
+    letterDisplay.textContent = letter;
+    letterDisplay.style.backgroundColor = backgroundColor;
+    letterDisplay.style.color = textColor;
+    
+    // 重新添加倒數底線（因為 textContent 會覆蓋子元素）
+    letterDisplay.appendChild(countdownLine);
+    countdownLine.style.width = "0%";
+    // 設定倒數底線顏色與字母顏色一致
+    countdownLine.style.backgroundColor = textColor;
+    
+    // 如果倒數開關開啟，則開始倒數計時
+    if (countdownToggle.checked) {
+        startCountdown();
+    }
+}
+
+// 播放字母音效（使用 Audio API 播放預先準備的 MP3 檔案）
+function playLetterSound(letter) {
+    const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);  // 使用小寫字母對應音效
+    return audio.play();
+}
+
+// 顯示提示覆蓋層，提示用戶點擊以播放音效（同時允許滑動切換）
+function showAudioOverlay() {
+    let overlay = document.createElement('div');
+    overlay.id = "audio-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
+    overlay.style.display = "flex";
+    overlay.style.justifyContent = "center";
+    overlay.style.alignItems = "center";
+    overlay.style.color = "white";
+    overlay.style.fontSize = "24px";
+    overlay.style.zIndex = "9999";
+    overlay.innerText = "請點擊以播放音效";
+    document.body.appendChild(overlay);
+    
+    // 覆蓋層點擊事件
+    overlay.addEventListener("click", function() {
+         playLetterSound(shuffledAlphabet[currentLetterIndex]).finally(() => {
+             document.body.removeChild(overlay);
+         });
+    }, { once: true });
+    
+    // 覆蓋層也允許滑動切換
+    overlay.addEventListener('touchstart', (e) => {
+         touchStartX = e.changedTouches[0].screenX;
+         touchStartY = e.changedTouches[0].screenY;
+    });
+    overlay.addEventListener('touchend', (e) => {
+         touchEndX = e.changedTouches[0].screenX;
+         touchEndY = e.changedTouches[0].screenY;
+         handleSwipe(e);
+         if (document.getElementById('audio-overlay')) {
+             document.body.removeChild(overlay);
+         }
+    });
+}
+
+// 當倒數結束時的處理函數
+function handleCountdownEnd() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+    countdownLine.style.width = "0%";
+    countdownTimer.textContent = "";
+    
+    // 若切換方式為滑動，則不自動播放，強制用戶點擊覆蓋層
+    if (lastSwitchMethod === "swipe") {
+        showAudioOverlay();
+    } else {
+        playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {
+            showAudioOverlay();
+        });
+    }
+}
+
+// 開始倒數計時
+function startCountdown() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+    
+    countdownValue = countdownDuration;  // 初始化為3秒
+    countdownTimer.textContent = "";
+    countdownLine.style.width = "100%";
+    
+    const updateFrequency = 100;  // 每100毫秒更新一次底線寬度
+    const steps = countdownDuration * (1000 / updateFrequency);
+    let currentStep = 0;
+    
+    countdownInterval = setInterval(() => {
+        currentStep++;
+        const percentRemaining = 100 - (currentStep / steps * 100);
+        countdownLine.style.width = `${percentRemaining}%`;
+        
+        if (currentStep % (1000 / updateFrequency) === 0) {
+            countdownValue--;
+        }
+        
+        if (currentStep >= steps) {
+            handleCountdownEnd();
+        }
+    }, updateFrequency);
+}
+
+// 下一個字母函數
+function goToNextLetter() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+        countdownTimer.textContent = "";
+        countdownLine.style.width = "0%";
+    }
+    
+    if (currentLetterIndex < shuffledAlphabet.length - 1) {
+        currentLetterIndex++;
+    } else {
+        currentLetterIndex = 0;
+    }
+    updateLetter();
+    
+    // 如果倒數開關開啟且切換方式為按鈕，則自動重新啟動倒數
+    if (countdownToggle.checked && lastSwitchMethod === "button") {
+        startCountdown();
+    }
+    isFirstClick = true;
+}
+
+// 上一個字母函數
+function goToPrevLetter() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+        countdownTimer.textContent = "";
+        countdownLine.style.width = "0%";
+    }
+    
+    if (currentLetterIndex > 0) {
+        currentLetterIndex--;
+    } else {
+        currentLetterIndex = shuffledAlphabet.length - 1;
+    }
+    updateLetter();
+    
+    if (countdownToggle.checked && lastSwitchMethod === "button") {
+        startCountdown();
+    }
+    isFirstClick = true;
+}
+
+// 點擊字母區塊的事件處理
+letterDisplay.addEventListener("click", (e) => {
+    // 如果處於滑動狀態，則不處理點擊事件
+    if (isSwiping) {
+        isSwiping = false;
+        return;
+    }
+    
+    // 當倒數開關開啟時，若倒數正在進行，則用戶主動點擊中斷倒數
+    if (countdownToggle.checked) {
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            countdownLine.style.width = "0%";
+            countdownTimer.textContent = "";
+            handleCountdownEnd();
+        }
+        return;
+    }
+    
+    if (isFirstClick) {
+        playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {
+            showAudioOverlay();
+        });
+        isFirstClick = false;
+    } else {
+        goToNextLetter();
+    }
+});
+
+// 觸摸開始事件：記錄觸摸起始位置並重置滑動標記
+letterDisplay.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+    isSwiping = false;
+});
+
+// 觸摸結束事件：記錄觸摸結束位置並處理滑動手勢
+letterDisplay.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    touchEndY = e.changedTouches[0].screenY;
+    handleSwipe(e);
+});
+
+// 處理滑動手勢
+function handleSwipe(e) {
+    const swipeThreshold = 50;  // 滑動閾值
+    const swipeDistance = touchEndX - touchStartX;
+    const verticalDistance = Math.abs(touchEndY - touchStartY);
+    
+    if (Math.abs(swipeDistance) > verticalDistance && Math.abs(swipeDistance) > swipeThreshold) {
+        isSwiping = true;
+        lastSwitchMethod = "swipe";  // 設定切換方式為滑動
+        
+        if (swipeDistance > 0) {
+            goToPrevLetter();
+        } else {
+            goToNextLetter();
+        }
+        // 防止隨後點擊事件影響倒數 (僅適用於 iOS)
+        e.preventDefault();
+    }
+}
+
+// 按鈕切換事件：設定切換方式為按鈕
+prevButton.addEventListener("click", () => {
+    lastSwitchMethod = "button";
+    goToPrevLetter();
+});
+nextButton.addEventListener("click", () => {
+    lastSwitchMethod = "button";
+    goToNextLetter();
+});
+
+// 倒數計時開關變更事件
+countdownToggle.addEventListener("change", () => {
+    if (countdownToggle.checked) {
+        startCountdown();
+    } else {
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            countdownLine.style.width = "0%";
+        }
+    }
+});
+
+// 初始化遊戲，顯示第一個字母
+updateLetter();
