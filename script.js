@@ -149,37 +149,37 @@ function startCountdown() {
     if (countdownInterval) {
         clearInterval(countdownInterval);
     }
-    
+
     countdownValue = countdownDuration;  // 初始化为3秒
-    // 不再显示倒数数字
-    countdownTimer.textContent = "";
+    countdownTimer.textContent = "";  // 不显示倒数数字
     countdownLine.style.width = "100%"; // 底线初始为100%
-    
+
     const updateFrequency = 100; // 每100毫秒更新一次底线宽度（更平滑的动画）
     const steps = countdownDuration * (1000 / updateFrequency); // 总步数
     let currentStep = 0;
-    
+
     countdownInterval = setInterval(() => {
         currentStep++;
-        
+
         // 更新底线宽度
         const percentRemaining = 100 - (currentStep / steps * 100);
         countdownLine.style.width = `${percentRemaining}%`;
-        
+
         // 每秒更新倒数计时值（内部记录，但不显示）
         if (currentStep % (1000 / updateFrequency) === 0) {
             countdownValue--;
         }
-        
-        // 倒数结束
+
+        // 倒数结束时触发发音
         if (currentStep >= steps) {
             clearInterval(countdownInterval);
             countdownInterval = null;
-            countdownLine.style.width = "0%"; // 底线宽度为0
+            countdownLine.style.width = "0%"; // 重置底线宽度
             playLetterSound(shuffledAlphabet[currentLetterIndex]);  // 播放当前字母的发音
         }
     }, updateFrequency);  // 每100毫秒更新一次
 }
+
 
 // 點擊字母區塊的事件
 letterDisplay.addEventListener("click", (e) => {
