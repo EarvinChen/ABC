@@ -1,17 +1,17 @@
-/* 新增：初始化全域 AudioContext 用於 iOS 音頻播放解鎖 */
+/* 初始化全域 AudioContext（所有設備均採用此流程） */
 let audioContext;
 if (window.AudioContext || window.webkitAudioContext) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
 }
 
-/* 新增：用於解鎖 iOS 上的音頻播放 (確保後續播放可觸發) */
+/* 用於解鎖音頻播放（確保後續播放可觸發） */
 function unlockAudio() {
     const dummyAudio = new Audio();
     dummyAudio.play().catch(() => {});
 }
 document.addEventListener('touchstart', unlockAudio, { once: true });
 
-// 全域變數：用來區分切換方式 "button" 或 "swipe"
+// 全域變數：用來區分切換方式，"button" 或 "swipe"
 let lastSwitchMethod = "";
 
 // 新增：倒數自然完成標記，預設為 false
@@ -33,7 +33,7 @@ let countdownLine = document.createElement("div");
 countdownLine.className = "countdown-line";
 countdownLine.style.width = "0%"; // 初始寬度為0
 
-// 添加底線到字母顯示區域
+// 添加倒數底線到字母顯示區塊
 letterDisplay.appendChild(countdownLine);
 
 // 倒數計時相關變數
@@ -42,10 +42,7 @@ let countdownInterval = null;
 const countdownDuration = 3; // 倒計時總時長（秒）
 
 // 觸摸事件相關變數
-let touchStartX = 0;
-let touchEndX = 0;
-let touchStartY = 0;
-let touchEndY = 0;
+let touchStartX = 0, touchEndX = 0, touchStartY = 0, touchEndY = 0;
 let isSwiping = false;  // 判斷是否為滑動事件
 
 // 隨機打亂陣列的函數
@@ -57,7 +54,7 @@ function shuffleArray(array) {
     return array;
 }
 
-// 隨機顏色生成函數
+// 隨機生成顏色
 function getRandomColor() {
     const letters = '0123456789ABCDEF';
     let color = '#';
@@ -70,10 +67,8 @@ function getRandomColor() {
 // 計算顏色亮度（用於檢查對比度）
 function getLuminance(color) {
     const rgb = parseInt(color.slice(1), 16);
-    const r = (rgb >> 16) & 0xff;
-    const g = (rgb >> 8) & 0xff;
-    const b = (rgb >> 0) & 0xff;
-    const a = [r, g, b].map(function(x) {
+    const r = (rgb >> 16) & 0xff, g = (rgb >> 8) & 0xff, b = (rgb >> 0) & 0xff;
+    const a = [r, g, b].map(x => {
         x /= 255;
         return (x <= 0.03928) ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
     });
@@ -82,8 +77,7 @@ function getLuminance(color) {
 
 // 判斷兩個顏色對比度是否足夠（符合 WCAG AA 標準）
 function isHighContrast(textColor, backgroundColor) {
-    const textLum = getLuminance(textColor);
-    const backgroundLum = getLuminance(backgroundColor);
+    const textLum = getLuminance(textColor), backgroundLum = getLuminance(backgroundColor);
     const contrast = (Math.max(textLum, backgroundLum) + 0.05) / (Math.min(textLum, backgroundLum) + 0.05);
     return contrast > 4.5;
 }
@@ -107,13 +101,13 @@ function updateLetter() {
     letterDisplay.style.backgroundColor = backgroundColor;
     letterDisplay.style.color = textColor;
     
-    // 重新添加倒數底線（因為 textContent 會覆蓋子元素）
+    // 重新添加倒數底線（因 textContent 會覆蓋子元素）
     letterDisplay.appendChild(countdownLine);
     countdownLine.style.width = "0%";
     // 設定倒數底線顏色與字母顏色一致
     countdownLine.style.backgroundColor = textColor;
     
-    // 如果倒數開關開啟，則開始倒數計時
+    // 若倒數開關開啟，則開始倒數計時
     if (countdownToggle.checked) {
         startCountdown();
     }
@@ -121,61 +115,11 @@ function updateLetter() {
 
 // 播放字母音效（使用 Audio API 播放預先準備的 MP3 檔案）
 function playLetterSound(letter) {
-    const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);  // 使用小寫字母對應音效
+    const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);
     return audio.play();
 }
 
-// 顯示提示覆蓋層，提示用戶點擊以播放音效（同時允許滑動切換）
-function showAudioOverlay() {
-    let overlay = document.createElement('div');
-    overlay.id = "audio-overlay";
-    overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.width = "100%";
-    overlay.style.height = "100%";
-    overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
-    overlay.style.display = "flex";
-    overlay.style.justifyContent = "center";
-    overlay.style.alignItems = "center";
-    overlay.style.color = "white";
-    overlay.style.fontSize = "24px";
-    overlay.style.zIndex = "9999";
-    overlay.innerText = "請點擊以播放音效";
-    document.body.appendChild(overlay);
-    
-    // 覆蓋層點擊事件：先恢復 AudioContext（若需要），再播放音效
-    overlay.addEventListener("click", async function() {
-         try {
-             if (audioContext && audioContext.state === 'suspended') {
-                 await audioContext.resume();
-             }
-             await playLetterSound(shuffledAlphabet[currentLetterIndex]);
-         } catch (err) {
-             // 如果播放失敗，可在此處處理
-         } finally {
-             if (document.getElementById('audio-overlay')) {
-                 document.body.removeChild(overlay);
-             }
-         }
-    }, { once: true });
-    
-    // 覆蓋層也允許滑動切換字母
-    overlay.addEventListener('touchstart', (e) => {
-         touchStartX = e.changedTouches[0].screenX;
-         touchStartY = e.changedTouches[0].screenY;
-    });
-    overlay.addEventListener('touchend', (e) => {
-         touchEndX = e.changedTouches[0].screenX;
-         touchEndY = e.changedTouches[0].screenY;
-         handleSwipe(e);
-         if (document.getElementById('audio-overlay')) {
-             document.body.removeChild(overlay);
-         }
-    });
-}
-
-// 當倒數結束時的處理函數
+// 當倒數自然完成時的處理：僅設定倒數完成標記，等待用戶點擊
 function handleCountdownEnd() {
     if (countdownInterval) {
         clearInterval(countdownInterval);
@@ -184,9 +128,8 @@ function handleCountdownEnd() {
     countdownLine.style.width = "0%";
     countdownTimer.textContent = "";
     
-    // 設定倒數完成標記為 true，等待用戶點擊觸發音效
+    // 設定倒數完成標記，等待用戶點擊觸發音效
     countdownCompleted = true;
-    // 不自動播放音效，僅等待用戶後續點擊
 }
 
 // 開始倒數計時
@@ -196,11 +139,11 @@ function startCountdown() {
         countdownInterval = null;
     }
     
-    countdownValue = countdownDuration;  // 初始化為3秒
+    countdownValue = countdownDuration;
     countdownTimer.textContent = "";
     countdownLine.style.width = "100%";
     
-    const updateFrequency = 100;  // 每100毫秒更新一次
+    const updateFrequency = 100; // 每100毫秒更新一次
     const steps = countdownDuration * (1000 / updateFrequency);
     let currentStep = 0;
     
@@ -228,19 +171,16 @@ function goToNextLetter() {
         countdownLine.style.width = "0%";
     }
     
-    if (currentLetterIndex < shuffledAlphabet.length - 1) {
-        currentLetterIndex++;
-    } else {
-        currentLetterIndex = 0;
-    }
+    currentLetterIndex = (currentLetterIndex < shuffledAlphabet.length - 1)
+                         ? currentLetterIndex + 1
+                         : 0;
     updateLetter();
     
-    // 如果倒數開關開啟且切換方式為按鈕，自動重新啟動倒數
+    // 若倒數開關開啟且切換方式為按鈕，自動重新啟動倒數
     if (countdownToggle.checked && lastSwitchMethod === "button") {
         startCountdown();
     }
     isFirstClick = true;
-    // 重置倒數完成標記
     countdownCompleted = false;
 }
 
@@ -253,11 +193,9 @@ function goToPrevLetter() {
         countdownLine.style.width = "0%";
     }
     
-    if (currentLetterIndex > 0) {
-        currentLetterIndex--;
-    } else {
-        currentLetterIndex = shuffledAlphabet.length - 1;
-    }
+    currentLetterIndex = (currentLetterIndex > 0)
+                         ? currentLetterIndex - 1
+                         : shuffledAlphabet.length - 1;
     updateLetter();
     
     if (countdownToggle.checked && lastSwitchMethod === "button") {
@@ -267,17 +205,17 @@ function goToPrevLetter() {
     countdownCompleted = false;
 }
 
-// 點擊字母區塊的事件處理
+// 點擊字母區塊事件處理
 letterDisplay.addEventListener("click", (e) => {
     if (isSwiping) {
         isSwiping = false;
         return;
     }
     
-    // 當倒數開關開啟時
+    // 當倒數開關開啟時：
     if (countdownToggle.checked) {
         if (countdownInterval) {
-            // 用戶點擊中斷倒數，強制中斷並直接播放音效
+            // 用戶點擊中斷倒數，立即中斷並播放音效
             clearInterval(countdownInterval);
             countdownInterval = null;
             countdownLine.style.width = "0%";
@@ -285,14 +223,14 @@ letterDisplay.addEventListener("click", (e) => {
             playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {});
             countdownCompleted = false;
         } else if (countdownCompleted) {
-            // 倒數自然完成後，用戶點擊觸發音效
+            // 倒數自然完成後，等待用戶點擊觸發音效
             playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {});
             countdownCompleted = false;
         }
         return;
     }
     
-    // 當倒數開關關閉時，處理一般點擊事件
+    // 若倒數開關關閉時，處理一般點擊事件
     if (!countdownToggle.checked) {
         if (isFirstClick) {
             playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {});
@@ -332,7 +270,7 @@ function handleSwipe(e) {
         } else {
             goToNextLetter();
         }
-        // 防止隨後的點擊事件影響倒數 (僅適用於 iOS)
+        // 防止隨後的點擊事件影響倒數（僅適用於 iOS）
         e.preventDefault();
     }
 }
