@@ -44,10 +44,10 @@ body, html {
     text-align: center;
     overflow: hidden;
     margin-bottom: 20px;
-    position: relative; /* 添加相對定位，用於底線的絕對定位 */
+    position: relative; /* 添加相对定位，用于底线的绝对定位 */
 }
 
-/* 倒數計時底線 */
+/* 倒数计时底线 */
 .countdown-line {
     position: absolute;
     bottom: 0;
@@ -113,7 +113,7 @@ body, html {
     color: #FF5722;
     min-width: 30px;
     text-align: center;
-    display: none; /* 隱藏倒數計時顯示 */
+    display: none; /* 隐藏倒数计时显示 */
 }
 
 /* 開關按鈕樣式 */
@@ -172,17 +172,6 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
-/* 新增：版本編號樣式 */
-#version {
-    position: fixed;
-    bottom: 5px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 10px;  /* 很小的字體 */
-    color: #666;
-    opacity: 0.5;
-}
-
 /* 手機設備的特定調整 */
 @media screen and (max-width: 767px) {
     .letter-display {
@@ -193,7 +182,7 @@ input:checked + .slider:before {
     }
     
     .countdown-line {
-        height: 8px; /* 在小屏幕上稍微調小底線高度 */
+        height: 8px; /* 在小屏幕上稍微调小底线高度 */
     }
     
     .controls-container {
