@@ -9,9 +9,21 @@
 <body>
     <div class="game-container">
         <div id="letter-display" class="letter-display">A</div>
-        <div class="button-container">
-            <button id="prev-button">上一個</button>
-            <button id="next-button">下一個</button>
+        <div class="controls-container">
+            <div class="control-item">
+                <button id="prev-button" class="nav-button">&lt;</button>
+            </div>
+            <div class="control-item">
+                <label class="switch">
+                    <input type="checkbox" id="countdown-toggle">
+                    <span class="slider round"></span>
+                </label>
+                <span class="countdown-label">倒數發音</span>
+                <span id="countdown-timer" class="countdown-timer"></span>
+            </div>
+            <div class="control-item">
+                <button id="next-button" class="nav-button">&gt;</button>
+            </div>
         </div>
     </div>
 
