@@ -98,17 +98,60 @@ function updateLetter() {
     countdownLine.style.width = "0%";
     // 設定倒數底線顏色與字母顏色一致
     countdownLine.style.backgroundColor = textColor;
-    
-    // 如果倒數開關開啟，則開始倒數計時
-    if (countdownToggle.checked) {
-        startCountdown();
-    }
 }
 
 // 播放字母音效（使用 Audio API 播放預先準備的 MP3 檔案）
 function playLetterSound(letter) {
     const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);  // 使用小寫字母對應音效
     audio.play();  // 播放音效
+}
+
+// 修改：將倒數計時結束時的處理邏輯獨立出來
+function handleCountdownEnd() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+    countdownLine.style.width = "0%";
+    countdownTimer.textContent = "";
+    
+    // 播放當前字母音效
+    playLetterSound(shuffledAlphabet[currentLetterIndex]);
+}
+
+// 開始倒數計時
+function startCountdown() {
+    // 如果已有倒數計時在運行，先停止它
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+    
+    countdownValue = countdownDuration;  // 初始化為3秒
+    countdownTimer.textContent = "";  // 不顯示倒數數字
+    countdownLine.style.width = "100%";  // 底線初始寬度為100%
+    
+    const updateFrequency = 100;  // 每100毫秒更新一次底線寬度（平滑動畫）
+    const steps = countdownDuration * (1000 / updateFrequency);  // 總步數
+    let currentStep = 0;
+    
+    countdownInterval = setInterval(() => {
+        currentStep++;
+        
+        // 更新倒數底線寬度
+        const percentRemaining = 100 - (currentStep / steps * 100);
+        countdownLine.style.width = `${percentRemaining}%`;
+        
+        // 每秒更新內部倒數計時值（不顯示）
+        if (currentStep % (1000 / updateFrequency) === 0) {
+            countdownValue--;
+        }
+        
+        // 倒數結束時，調用結束處理函數
+        if (currentStep >= steps) {
+            handleCountdownEnd();
+        }
+    }, updateFrequency);
 }
 
 // 下一個字母函數
@@ -159,43 +202,6 @@ function goToPrevLetter() {
         startCountdown();
     }
     isFirstClick = true;  // 重置點擊狀態
-}
-
-// 開始倒數計時
-function startCountdown() {
-    // 如果已有倒數計時在運行，先停止它
-    if (countdownInterval) {
-        clearInterval(countdownInterval);
-    }
-    
-    countdownValue = countdownDuration;  // 初始化為3秒
-    countdownTimer.textContent = "";  // 不顯示倒數數字
-    countdownLine.style.width = "100%";  // 底線初始寬度為100%
-    
-    const updateFrequency = 100;  // 每100毫秒更新一次底線寬度（平滑動畫）
-    const steps = countdownDuration * (1000 / updateFrequency);  // 總步數
-    let currentStep = 0;
-    
-    countdownInterval = setInterval(() => {
-        currentStep++;
-        
-        // 更新倒數底線寬度
-        const percentRemaining = 100 - (currentStep / steps * 100);
-        countdownLine.style.width = `${percentRemaining}%`;
-        
-        // 每秒更新內部倒數計時值（不顯示）
-        if (currentStep % (1000 / updateFrequency) === 0) {
-            countdownValue--;
-        }
-        
-        // 倒數結束時，清除計時器並播放當前字母音效
-        if (currentStep >= steps) {
-            clearInterval(countdownInterval);
-            countdownInterval = null;
-            countdownLine.style.width = "0%";
-            playLetterSound(shuffledAlphabet[currentLetterIndex]);
-        }
-    }, updateFrequency);
 }
 
 // 點擊字母區塊事件處理
