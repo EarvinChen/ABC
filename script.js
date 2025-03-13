@@ -11,6 +11,9 @@ function unlockAudio() {
 }
 document.addEventListener('touchstart', unlockAudio, { once: true });
 
+// 全域變數，用來區分切換方式，"button" 或 "swipe"
+let lastSwitchMethod = "";
+
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 let shuffledAlphabet = shuffleArray([...alphabet]);  // 隨機打亂字母順序
 let currentLetterIndex = 0;
@@ -111,17 +114,12 @@ function updateLetter() {
 }
 
 // 播放字母音效（使用 Audio API 播放預先準備的 MP3 檔案）
-// 修改：使用 Promise.race 設定超時，以確保在非用戶手勢觸發下超過500ms後進入錯誤流程
 function playLetterSound(letter) {
     const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);  // 使用小寫字母對應音效
-    let playPromise = audio.play();
-    return Promise.race([
-        playPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Playback timeout")), 500))
-    ]);
+    return audio.play();
 }
 
-// 顯示提示覆蓋層，提示用戶點擊以播放音效
+// 顯示提示覆蓋層，提示用戶點擊以播放音效（用於 iOS 滑動切換時）
 function showAudioOverlay() {
     let overlay = document.createElement('div');
     overlay.id = "audio-overlay";
@@ -147,7 +145,7 @@ function showAudioOverlay() {
     }, { once: true });
 }
 
-// 當倒數結束時的處理函數（嘗試恢復 AudioContext 並播放音效）
+// 當倒數結束時的處理函數
 function handleCountdownEnd() {
     if (countdownInterval) {
         clearInterval(countdownInterval);
@@ -156,15 +154,9 @@ function handleCountdownEnd() {
     countdownLine.style.width = "0%";
     countdownTimer.textContent = "";
     
-    // 嘗試恢復 AudioContext（對 iOS 進行補救）
-    if (audioContext && audioContext.state === 'suspended') {
-        audioContext.resume().then(() => {
-            playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {
-                showAudioOverlay();
-            });
-        }).catch(() => {
-            showAudioOverlay();
-        });
+    // 若切換方式為滑動，強制用戶點擊覆蓋層
+    if (lastSwitchMethod === "swipe") {
+        showAudioOverlay();
     } else {
         playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {
             showAudioOverlay();
@@ -174,33 +166,28 @@ function handleCountdownEnd() {
 
 // 開始倒數計時
 function startCountdown() {
-    // 如果已有倒數計時在運行，先停止它
     if (countdownInterval) {
         clearInterval(countdownInterval);
         countdownInterval = null;
     }
     
     countdownValue = countdownDuration;  // 初始化為3秒
-    countdownTimer.textContent = "";  // 不顯示倒數數字
-    countdownLine.style.width = "100%";  // 底線初始寬度為100%
+    countdownTimer.textContent = "";
+    countdownLine.style.width = "100%";
     
-    const updateFrequency = 100;  // 每100毫秒更新一次底線寬度（平滑動畫）
-    const steps = countdownDuration * (1000 / updateFrequency);  // 總步數
+    const updateFrequency = 100;  // 每100毫秒更新一次底線寬度
+    const steps = countdownDuration * (1000 / updateFrequency);
     let currentStep = 0;
     
     countdownInterval = setInterval(() => {
         currentStep++;
-        
-        // 更新倒數底線寬度
         const percentRemaining = 100 - (currentStep / steps * 100);
         countdownLine.style.width = `${percentRemaining}%`;
         
-        // 每秒更新內部倒數計時值（不顯示）
         if (currentStep % (1000 / updateFrequency) === 0) {
             countdownValue--;
         }
         
-        // 倒數結束時，調用結束處理函數
         if (currentStep >= steps) {
             handleCountdownEnd();
         }
@@ -209,7 +196,6 @@ function startCountdown() {
 
 // 下一個字母函數
 function goToNextLetter() {
-    // 停止正在運行的倒數計時
     if (countdownInterval) {
         clearInterval(countdownInterval);
         countdownInterval = null;
@@ -217,7 +203,6 @@ function goToNextLetter() {
         countdownLine.style.width = "0%";
     }
     
-    // 切換至下一個字母（循環）
     if (currentLetterIndex < shuffledAlphabet.length - 1) {
         currentLetterIndex++;
     } else {
@@ -225,16 +210,15 @@ function goToNextLetter() {
     }
     updateLetter();
     
-    // 如果倒數開關開啟，重新啟動倒數
-    if (countdownToggle.checked) {
+    // 根據切換方式重新啟動倒數 (按鈕切換自動播放)
+    if (countdownToggle.checked && lastSwitchMethod === "button") {
         startCountdown();
     }
-    isFirstClick = true;  // 重置點擊狀態
+    isFirstClick = true;
 }
 
 // 上一個字母函數
 function goToPrevLetter() {
-    // 停止正在運行的倒數計時
     if (countdownInterval) {
         clearInterval(countdownInterval);
         countdownInterval = null;
@@ -242,7 +226,6 @@ function goToPrevLetter() {
         countdownLine.style.width = "0%";
     }
     
-    // 切換至上一個字母（循環）
     if (currentLetterIndex > 0) {
         currentLetterIndex--;
     } else {
@@ -250,33 +233,30 @@ function goToPrevLetter() {
     }
     updateLetter();
     
-    // 如果倒數開關開啟，重新啟動倒數
-    if (countdownToggle.checked) {
+    if (countdownToggle.checked && lastSwitchMethod === "button") {
         startCountdown();
     }
-    isFirstClick = true;  // 重置點擊狀態
+    isFirstClick = true;
 }
 
-// 點擊字母區塊的事件處理
+// 點擊字母區塊事件處理
 letterDisplay.addEventListener("click", (e) => {
-    // 如果是滑動事件結束後的點擊事件，就不處理
     if (isSwiping) {
         isSwiping = false;
         return;
     }
     
-    // 如果倒數開關開啟，則由倒數計時控制發音，不直接處理點擊
-    if (countdownToggle.checked) {
-        return;
-    }
-    
-    if (isFirstClick) {
-        playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {
-            showAudioOverlay();
-        });
-        isFirstClick = false;
+    // 當倒數開關關閉時或使用按鈕切換時，自動播放
+    if (!countdownToggle.checked) {
+        if (isFirstClick) {
+            playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {});
+            isFirstClick = false;
+        } else {
+            goToNextLetter();
+        }
     } else {
-        goToNextLetter();
+        // 若倒數開關開啟且是直接點擊 (非滑動) 不觸發播放，由倒數計時控制
+        return;
     }
 });
 
@@ -296,23 +276,33 @@ letterDisplay.addEventListener('touchend', (e) => {
 
 // 處理滑動手勢
 function handleSwipe(e) {
-    const swipeThreshold = 50;  // 滑動閾值，需大於此值才觸發
+    const swipeThreshold = 50;
     const swipeDistance = touchEndX - touchStartX;
     const verticalDistance = Math.abs(touchEndY - touchStartY);
     
-    // 確保是水平滑動（水平移動距離大於垂直移動距離）
     if (Math.abs(swipeDistance) > verticalDistance && Math.abs(swipeDistance) > swipeThreshold) {
-        isSwiping = true;  // 標記為滑動事件
+        isSwiping = true;
+        // 設置切換方式為滑動
+        lastSwitchMethod = "swipe";
         
         if (swipeDistance > 0) {
             goToPrevLetter();
         } else {
             goToNextLetter();
         }
-        // 防止隨後的點擊事件影響倒數計時 (僅適用於 iOS)
         e.preventDefault();
     }
 }
+
+// 按鈕切換事件：將切換方式設為按鈕
+prevButton.addEventListener("click", () => {
+    lastSwitchMethod = "button";
+    goToPrevLetter();
+});
+nextButton.addEventListener("click", () => {
+    lastSwitchMethod = "button";
+    goToNextLetter();
+});
 
 // 倒數計時開關變更事件
 countdownToggle.addEventListener("change", () => {
@@ -326,12 +316,6 @@ countdownToggle.addEventListener("change", () => {
         }
     }
 });
-
-// 上一個字母按鈕事件
-prevButton.addEventListener("click", goToPrevLetter);
-
-// 下一個字母按鈕事件
-nextButton.addEventListener("click", goToNextLetter);
 
 // 初始化遊戲，顯示第一個字母
 updateLetter();
