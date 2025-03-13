@@ -111,13 +111,17 @@ function updateLetter() {
 }
 
 // 播放字母音效（使用 Audio API 播放預先準備的 MP3 檔案）
-// 修改：返回音頻播放的 Promise 以便捕獲錯誤
+// 修改：使用 Promise.race 設定超時，以確保在非用戶手勢觸發下超過500ms後進入錯誤流程
 function playLetterSound(letter) {
     const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);  // 使用小寫字母對應音效
-    return audio.play();
+    let playPromise = audio.play();
+    return Promise.race([
+        playPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Playback timeout")), 500))
+    ]);
 }
 
-// 顯示用戶點擊覆蓋層，提示用戶點擊以播放音效（解決 iOS 非用戶手勢觸發問題）
+// 顯示提示覆蓋層，提示用戶點擊以播放音效
 function showAudioOverlay() {
     let overlay = document.createElement('div');
     overlay.id = "audio-overlay";
