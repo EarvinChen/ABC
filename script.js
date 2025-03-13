@@ -112,7 +112,7 @@ function goToNextLetter() {
         countdownTimer.textContent = "";
         countdownLine.style.width = "0%"; // 重置底線
     }
-    
+
     if (currentLetterIndex < shuffledAlphabet.length - 1) {
         currentLetterIndex++;
     } else {
@@ -120,6 +120,12 @@ function goToNextLetter() {
         currentLetterIndex = 0;
     }
     updateLetter();
+
+    // 如果倒數開關開啟，重新開始倒數計時
+    if (countdownToggle.checked) {
+        startCountdown();
+    }
+
     isFirstClick = true;  // 重置為第一次點擊
 }
 
@@ -132,7 +138,7 @@ function goToPrevLetter() {
         countdownTimer.textContent = "";
         countdownLine.style.width = "0%"; // 重置底線
     }
-    
+
     if (currentLetterIndex > 0) {
         currentLetterIndex--;
     } else {
@@ -140,8 +146,16 @@ function goToPrevLetter() {
         currentLetterIndex = shuffledAlphabet.length - 1;
     }
     updateLetter();
+
+    // 如果倒數開關開啟，重新開始倒數計時
+    if (countdownToggle.checked) {
+        startCountdown();
+    }
+
     isFirstClick = true;  // 重置為第一次點擊
 }
+
+
 
 // 開始倒數計時
 function startCountdown() {
@@ -222,13 +236,13 @@ function handleSwipe() {
     const swipeThreshold = 50; // 滑動閾值，滑動距離需大於此值才觸發
     const swipeDistance = touchEndX - touchStartX;
     const verticalDistance = Math.abs(touchEndY - touchStartY);
-    
+
     // 確保是水平滑動（水平移動距離大於垂直移動距離）
     if (Math.abs(swipeDistance) > verticalDistance) {
         // 檢查滑動方向和距離
         if (Math.abs(swipeDistance) > swipeThreshold) {
             isSwiping = true;  // 標記為滑動事件
-            
+
             if (swipeDistance > 0) {
                 // 右滑 - 上一個字母
                 goToPrevLetter();
