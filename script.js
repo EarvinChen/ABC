@@ -111,12 +111,39 @@ function updateLetter() {
 }
 
 // 播放字母音效（使用 Audio API 播放預先準備的 MP3 檔案）
+// 修改：返回音頻播放的 Promise 以便捕獲錯誤
 function playLetterSound(letter) {
     const audio = new Audio(`sounds/${letter.toLowerCase()}.mp3`);  // 使用小寫字母對應音效
-    audio.play();  // 播放音效
+    return audio.play();
 }
 
-// 當倒數結束時的處理函數（在此處嘗試在 iOS 上恢復 AudioContext）
+// 顯示用戶點擊覆蓋層，提示用戶點擊以播放音效（解決 iOS 非用戶手勢觸發問題）
+function showAudioOverlay() {
+    let overlay = document.createElement('div');
+    overlay.id = "audio-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
+    overlay.style.display = "flex";
+    overlay.style.justifyContent = "center";
+    overlay.style.alignItems = "center";
+    overlay.style.color = "white";
+    overlay.style.fontSize = "24px";
+    overlay.style.zIndex = "9999";
+    overlay.innerText = "請點擊以播放音效";
+    document.body.appendChild(overlay);
+    
+    overlay.addEventListener("click", function() {
+         playLetterSound(shuffledAlphabet[currentLetterIndex]).finally(() => {
+             document.body.removeChild(overlay);
+         });
+    }, { once: true });
+}
+
+// 當倒數結束時的處理函數（嘗試恢復 AudioContext 並播放音效）
 function handleCountdownEnd() {
     if (countdownInterval) {
         clearInterval(countdownInterval);
@@ -125,16 +152,19 @@ function handleCountdownEnd() {
     countdownLine.style.width = "0%";
     countdownTimer.textContent = "";
     
-    // 嘗試恢復 AudioContext (對 iOS 進行補救)
+    // 嘗試恢復 AudioContext（對 iOS 進行補救）
     if (audioContext && audioContext.state === 'suspended') {
         audioContext.resume().then(() => {
-            playLetterSound(shuffledAlphabet[currentLetterIndex]);
-        }).catch((err) => {
-            // 如果恢復失敗，直接播放音效
-            playLetterSound(shuffledAlphabet[currentLetterIndex]);
+            playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {
+                showAudioOverlay();
+            });
+        }).catch(() => {
+            showAudioOverlay();
         });
     } else {
-        playLetterSound(shuffledAlphabet[currentLetterIndex]);
+        playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {
+            showAudioOverlay();
+        });
     }
 }
 
@@ -237,7 +267,9 @@ letterDisplay.addEventListener("click", (e) => {
     }
     
     if (isFirstClick) {
-        playLetterSound(shuffledAlphabet[currentLetterIndex]);
+        playLetterSound(shuffledAlphabet[currentLetterIndex]).catch(() => {
+            showAudioOverlay();
+        });
         isFirstClick = false;
     } else {
         goToNextLetter();
