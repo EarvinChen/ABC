@@ -9,19 +9,19 @@ const nextButton = document.getElementById("next-button");
 const countdownToggle = document.getElementById("countdown-toggle");
 const countdownTimer = document.getElementById("countdown-timer");
 
-// 创建底线元素
+// 創建倒數底線元素
 let countdownLine = document.createElement("div");
 countdownLine.className = "countdown-line";
-countdownLine.style.width = "0%"; // 初始宽度为0
+countdownLine.style.width = "0%"; // 初始寬度為0
 
-// 添加底线到字母显示区域
+// 添加底線到字母顯示區域
 letterDisplay.appendChild(countdownLine);
 
 // 倒數計時相關變數
 let countdownActive = false;
 let countdownValue = 0;
 let countdownInterval = null;
-const countdownDuration = 3; // 倒计时总时长（秒）
+const countdownDuration = 3; // 倒計時總時長（秒）
 
 // 觸摸事件相關變數
 let touchStartX = 0;
@@ -85,10 +85,10 @@ function updateLetter() {
     letterDisplay.style.backgroundColor = backgroundColor;
     letterDisplay.style.color = textColor;
     
-    // 重新添加底线元素（因为textContent会覆盖子元素）
+    // 重新添加底線元素（因為 textContent 會覆蓋子元素）
     letterDisplay.appendChild(countdownLine);
     countdownLine.style.width = "0%";
-    // 设置底线颜色与字母颜色一致
+    // 設定底線顏色與字母顏色一致
     countdownLine.style.backgroundColor = textColor;
     
     // 如果倒數計時開關已開啟，開始倒數計時
@@ -110,7 +110,7 @@ function goToNextLetter() {
         clearInterval(countdownInterval);
         countdownInterval = null;
         countdownTimer.textContent = "";
-        countdownLine.style.width = "0%"; // 重置底线
+        countdownLine.style.width = "0%"; // 重置底線
     }
     
     if (currentLetterIndex < shuffledAlphabet.length - 1) {
@@ -130,7 +130,7 @@ function goToPrevLetter() {
         clearInterval(countdownInterval);
         countdownInterval = null;
         countdownTimer.textContent = "";
-        countdownLine.style.width = "0%"; // 重置底线
+        countdownLine.style.width = "0%"; // 重置底線
     }
     
     if (currentLetterIndex > 0) {
@@ -143,43 +143,42 @@ function goToPrevLetter() {
     isFirstClick = true;  // 重置為第一次點擊
 }
 
-// 开始倒数计时
+// 開始倒數計時
 function startCountdown() {
-    // 如果已经有一个倒数计时在运行，先清除它
+    // 如果已經有一個倒數計時在運行，先清除它
     if (countdownInterval) {
         clearInterval(countdownInterval);
     }
-
-    countdownValue = countdownDuration;  // 初始化为3秒
-    countdownTimer.textContent = "";  // 不显示倒数数字
-    countdownLine.style.width = "100%"; // 底线初始为100%
-
-    const updateFrequency = 100; // 每100毫秒更新一次底线宽度（更平滑的动画）
-    const steps = countdownDuration * (1000 / updateFrequency); // 总步数
+    
+    countdownValue = countdownDuration;  // 初始化為3秒
+    countdownTimer.textContent = "";  // 不顯示倒數數字
+    countdownLine.style.width = "100%"; // 底線初始為100%
+    
+    const updateFrequency = 100; // 每100毫秒更新一次底線寬度（更平滑的動畫）
+    const steps = countdownDuration * (1000 / updateFrequency); // 總步數
     let currentStep = 0;
-
+    
     countdownInterval = setInterval(() => {
         currentStep++;
-
-        // 更新底线宽度
+        
+        // 更新底線寬度
         const percentRemaining = 100 - (currentStep / steps * 100);
         countdownLine.style.width = `${percentRemaining}%`;
-
-        // 每秒更新倒数计时值（内部记录，但不显示）
+        
+        // 每秒更新倒數計時值（內部記錄，但不顯示）
         if (currentStep % (1000 / updateFrequency) === 0) {
             countdownValue--;
         }
-
-        // 倒数结束时触发发音
+        
+        // 倒數結束
         if (currentStep >= steps) {
             clearInterval(countdownInterval);
             countdownInterval = null;
-            countdownLine.style.width = "0%"; // 重置底线宽度
-            playLetterSound(shuffledAlphabet[currentLetterIndex]);  // 播放当前字母的发音
+            countdownLine.style.width = "0%"; // 底線寬度為0
+            playLetterSound(shuffledAlphabet[currentLetterIndex]);  // 播放當前字母的發音
         }
     }, updateFrequency);  // 每100毫秒更新一次
 }
-
 
 // 點擊字母區塊的事件
 letterDisplay.addEventListener("click", (e) => {
@@ -251,7 +250,7 @@ countdownToggle.addEventListener("change", () => {
         if (countdownInterval) {
             clearInterval(countdownInterval);
             countdownInterval = null;
-            countdownLine.style.width = "0%"; // 重置底线
+            countdownLine.style.width = "0%"; // 重置底線
         }
     }
 });
